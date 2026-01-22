@@ -140,119 +140,104 @@ int depositJades(Player* player){
 
 }
 
-int warpOnce(Player* player){
-
-    int roll = rand() % 10000; // 0 - 9999 random number na'tin and more precise compared kung 0 - 99
-    float rollPercent = roll / 100.0f;
-
+int warpOnce(Player* player) {
     printf("\nWarping...\n");
     Sleep(2000);
 
-    pullsSince5star++;
-    pullsSince4star++;
+    PullResult result = simulatePull(player); // Use modular function
 
-    // Soft Pity System
-
-    float chanceFive;
-    if(pullsSince5star < 75){
-        chanceFive = 1; // 1% pa rin
-    } 
-    else{
-        chanceFive = 1.0 + (pullsSince5star - 74) * 0.2f;
-    }
-    if(pullsSince5star >= 90){
-        chanceFive = 100.0;
-    }       
-
-    //
-
-    if(pullsSince5star >= 90){
-        printf("\n*PITY* You got a guaranteed 5* Character!\n");
-        pullsSince5star = 0;
-        pullsSince4star = 0;
-    }
-    else if(pullsSince4star >= 10){
-        printf("\n*PITY* You got a guaranteed 4* Character/Light Cone!\n");
-        pullsSince4star = 0;
-    }
-    else if(rollPercent < chanceFive){
+    if (result == FIVE_STAR){
         printf("\nYou got a 5* Character/Light Cone!\n");
-        pullsSince5star = 0;
-        pullsSince4star = 0;
-    }
-    else if(rollPercent < chanceFive + 10.0){
+    } else if (result == FOUR_STAR) {
         printf("\nYou got a 4* Character/Light Cone!\n");
-        pullsSince4star = 0;
-    }
-    else{
-        printf("\nYou got a 3* Light Cone.\n");
+    } else {
+        printf("\nYou got a 3* Light Cone!\n");
     }
 
     Sleep(1000);
     return 0;
 }
 
-int warpTen(){
+int warpTen(Player* player) {
     int i;
-    int fourOrfive = 0;
+    int hasFourOrFive = 0; // Track if any 4* star or 5* was pulled
 
     printf("\n===================\n");
     printf("Here are your 10-Pull Results:\n");
     Sleep(2000);
 
-    for(i = 0; i < 10; i++){
-        pullsSince5star++;
-        pullsSince4star++;
+    for(i = 0; i < 10; i++) {
+        PullResult result = simulatePull(player); // Use modular function
 
-        // Soft Pity System
-        float chanceFive;
-        if(pullsSince5star < 75){
-            chanceFive = 1.0;
-        }
-        else{
-            chanceFive = 1.0 + (pullsSince5star - 74) * 0.2f;
-        }
-        if(pullsSince5star >= 90){
-            chanceFive = 100.0;
-        }
-
-        //
-
-        int roll = rand() % 10000; // same thing earlier 0 - 99 chance
-        float rollPercent = roll / 100.0f;
-
-        if(pullsSince5star >= 90){
-            printf("\n%02d: *PITY* Guaranteed 5* Character\n", i + 1);
-            pullsSince5star = 0;
-            pullsSince4star = 0;
-            fourOrfive = 1;
-        }
-        else if(pullsSince4star >= 10){
-            printf("\n%02d: *PITY* Guaranteed 4* Character/Light Cone\n", i + 1);
-            pullsSince4star = 0;
-            fourOrfive = 1;
-        }
-        else if(rollPercent < chanceFive){
-            printf("\n%02d: 5* Character/Light Cone\n", i + 1);
-            pullsSince5star = 0;
-            pullsSince4star = 0;
-            fourOrfive = 1;
-        }
-        else if(rollPercent < chanceFive + 10.0){
-            printf("\n%02d: 4* Character/Light Cone\n", i + 1);
-            pullsSince4star = 0;
-            fourOrfive = 1;
-        }
-        else{
-            printf("\n%02d: 3* Light Cone\n", i + 1);
+        if (result == FIVE_STAR) {
+            printf("\n%02d: 5* Character/Light Cone!\n",i + 1);
+            hasFourOrFive = 1;
+        } else if (result == FOUR_STAR) {
+            printf("\n%02d: 4* Character/Light Cone!\n",i + 1);
+            hasFourOrFive = 1;
+        } else {
+            printf("\n%02d: 3* Light Cone!\n",i + 1);
         }
 
         Sleep(1000);
     }
 
-    if(!fourOrfive){
-        printf("\n(Guarantee triggered!) Last pull upgraded to 4* Character/Light Cone\n");
-        pullsSince4star = 0;
+    // Fixed if no 4* or 5* in 10 pulls, guarantee the last one is 4*
+    if (!hasFourOrFive) {
+        printf("\n(Guarantee triggered) Last pull upgraded to 4* Character/Lightcone\n");
+        player->pullsSince4star = 0; // Reset the 4* pity as per guarantee
     }
 
+    return 0;
+}
+
+// Modular function for simulating one pull
+PullResult simulatePull(Player* player) {
+    player->pullsSince5star++;
+    player->pullsSince4star++;
+
+    // Calculate 5* chance with soft pity
+    float chanceFive = BASE_5STAR_CHANCE;
+    if (player->pullsSince5star >= SOFT_PITY_START) {
+        chanceFive += (player->pullsSince5star - SOFT_PITY_START + 1) * PITY_INCREMENT;
+    }
+    if (player->pullsSince5star >= HARD_PITY_5STAR) {
+        chanceFive = 100.0f;
+    }
+
+    int roll = rand() % RANDOM_SCALE;
+    float rollPercent = roll / 100.0f;
+
+    if (player->pullsSince5star >= HARD_PITY_5STAR) {
+        player->pullsSince5star = 0;
+        player->pullsSince4star = 0;
+        return FIVE_STAR;
+    } else if (player->pullsSince4star >= HARD_PITY_4STAR) {
+        player->pullsSince4star = 0;
+        return FOUR_STAR;
+    } else if (rollPercent < chanceFive) {
+        player->pullsSince5star = 0;
+        player->pullsSince4star = 0;
+        return FIVE_STAR;
+    } else if (rollPercent < chanceFive + BASE_4STAR_CHANCE) {
+        player->pullsSince4star = 0;
+        return FOUR_STAR;
+    } else {
+        return THREE_STAR;
+    }
+}
+
+// Safe Input Function
+int getChoice() {
+    int choice;
+    while (1) {
+        printf("Enter your choice: ");
+        if (scanf("%d", &choice) == 1) {
+            while (getchar() != '\n'); // Clear buffer
+            return choice;
+        } else {
+            printf("\n[!] Invalid Choice!. Please enter a number.\n");
+            while (getchar() != '\n'); // Flush invalid input
+        }
+    }
 }
