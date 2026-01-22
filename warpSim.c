@@ -3,6 +3,17 @@
 #include <windows.h>
 #include <time.h>
 
+// Constants for game mechanics
+#define JADE_PER_WARP 160
+#define JADE_PER_10_WARP 1600
+#define BASE_5STAR_CHANCE 1.0f  // 1%
+#define BASE_4STAR_CHANCE 10.0f // 10%
+#define SOFT_PITY_START 75
+#define HARD_PITY_5STAR 90
+#define HARD_PITY_4STAR 10
+#define PITY_INCREMENT 0.2f // 0.2% for every suceeding pull after soft pity
+#define RANDOM_SCALE 10000
+
 int pullsSince5star = 0;
 int pullsSince4star = 0;
 
@@ -10,7 +21,6 @@ void checkBalance(int balance);
 int depositJades();
 int warpOnce();
 int warpTen();
-
 
 int main(){
 
