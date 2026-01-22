@@ -14,21 +14,29 @@
 #define PITY_INCREMENT 0.2f // 0.2% for every suceeding pull after soft pity
 #define RANDOM_SCALE 10000
 
-int pullsSince5star = 0;
-int pullsSince4star = 0;
+// Struct to encapsulate player state
+typedef struct {
+    int balance;
+    int pullsSince5star;
+    int pullsSince4star;
+} Player;
 
-void checkBalance(int balance);
-int depositJades();
-int warpOnce();
-int warpTen();
+// Enum for pull results
+typedef enum{THREE_STAR, FOUR_STAR, FIVE_STAR} PullResult;
+
+// Function prototypes
+void checkBalance(Player* player);
+int depositJades(Player* player);
+int warpOnce(Player* player);
+int warpTen(Player* player);
+PullResult simulatePull(Player* player);
+int getChoice();
 
 int main(){
 
     // HSR Gacha Warp Simulator
-
     int choice;
-    int balance = 0;
-
+    Player player = {0, 0, 0}; // Initialize player state
 
     srand(time(NULL));
 
@@ -44,35 +52,29 @@ int main(){
         printf(" [5] Exit\n");
 
         printf("+======================================+\n");
-        
-        printf("Enter your choice: ");
-        if(scanf("%d", &choice) != 1) {
-            printf("\n[!] Invalid Option. Please enter a number.\n");
-            while (getchar() != '\n')
-            Sleep(1000);
-            continue;
-        }
+
+        choice = getChoice(); // Safe input handling
 
         switch(choice){
             case 1: 
-                checkBalance(balance);
+                checkBalance(&player);
                 break;
             case 2:
-                balance += depositJades();
+                depositJades(&player);
                 break;
             case 3:
-                if(balance >= 160){
-                    balance -= 160;
-                    warpOnce();
+                if(player.balance >= JADE_PER_WARP){
+                    player.balance -= JADE_PER_WARP;
+                    warpOnce(&player);
                 }
                 else{
                     printf("\nNot enough Stellar Jades! (Need 160)\n");
                 }
                 break;
             case 4:
-                if(balance >= 1600){
-                    balance -= 1600;
-                    warpTen();
+                if(player.balance >= JADE_PER_10_WARP){
+                    player.balance -= JADE_PER_10_WARP;
+                    warpTen(&player);
                 }
                 else{
                     printf("\nNot enough Stellar Jades! (Need 1600)\n");
@@ -101,20 +103,20 @@ int main(){
     return 0;
 }
 
-void checkBalance(int balance){
+void checkBalance(Player* player){
     printf("\n[**************************************]\n");
     printf("[          BALANCE CHECK               ]\n");
     printf("[**************************************]\n\n");
 
-    printf("   Stellar Jades:  %d\n", balance);
-    printf("   Pulls since 5*:  %d / 90\n", pullsSince5star);
-    printf("   Pulls since 4*:  %d / 10\n", pullsSince4star);
+    printf("   Stellar Jades:  %d\n", player->balance);
+    printf("   Pulls since 5*:  %d / 90\n", player->pullsSince5star);
+    printf("   Pulls since 4*:  %d / 10\n", player->pullsSince4star);
 
     printf("\n[**************************************]\n");
 
 }
 
-int depositJades(){
+int depositJades(Player* player){
 
     int amount;
 
@@ -132,13 +134,13 @@ int depositJades(){
         printf("\n====================\n");
         printf("Deposit successful +%d Jades\n", amount);
         printf("====================\n");
-        return amount; 
+        player->balance += amount;
+        return 0;
     }
-
 
 }
 
-int warpOnce(){
+int warpOnce(Player* player){
 
     int roll = rand() % 10000; // 0 - 9999 random number na'tin and more precise compared kung 0 - 99
     float rollPercent = roll / 100.0f;
