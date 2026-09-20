@@ -1,7 +1,24 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 199309L
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#define SLEEP(ms) Sleep(ms)
+#else
+static void sleepMilliseconds(unsigned int milliseconds) {
+    struct timespec request = {
+        milliseconds / 1000,
+        (long)(milliseconds % 1000) * 1000000L
+    };
+    nanosleep(&request, NULL);
+}
+#define SLEEP(ms) sleepMilliseconds(ms)
+#endif
 
 // Constants for game mechanics
 #define JADE_PER_WARP 160
@@ -26,9 +43,9 @@ typedef enum{THREE_STAR, FOUR_STAR, FIVE_STAR} PullResult;
 
 // Function prototypes
 void checkBalance(Player* player);
-int depositJades(Player* player);
-int warpOnce(Player* player);
-int warpTen(Player* player);
+void depositJades(Player* player);
+void warpOnce(Player* player);
+void warpTen(Player* player);
 PullResult simulatePull(Player* player);
 int getChoice();
 
@@ -87,14 +104,13 @@ int main(){
                     printf("****************************\n");
                 break;
             default:
-                Sleep(1000);
+                SLEEP(1000);
                 printf("\nINVALID CHOICE! Please select  1 - 5\n");
                 break;
         }
 
         if(choice != 5) {
             printf("\nPress Enter to return to the menu...");
-            while(getchar() != '\n');
             getchar();
         }
 
@@ -116,7 +132,7 @@ void checkBalance(Player* player){
 
 }
 
-int depositJades(Player* player){
+void depositJades(Player* player){
 
     int amount;
 
@@ -125,24 +141,28 @@ int depositJades(Player* player){
     printf("<-------------------------------------->\n\n");
 
     printf("Enter amount: ");
-    scanf("%d", &amount);
+    if (scanf("%d", &amount) != 1) {
+        while (getchar() != '\n' && !feof(stdin));
+        printf("Invalid Amount\n");
+        return;
+    }
+    while (getchar() != '\n' && !feof(stdin));
 
     if(amount < 0){
         printf("Invalid Amount\n");
-        return 0;
+        return;
     } else {
         printf("\n====================\n");
         printf("Deposit successful +%d Jades\n", amount);
         printf("====================\n");
         player->balance += amount;
-        return 0;
     }
 
 }
 
-int warpOnce(Player* player) {
+void warpOnce(Player* player) {
     printf("\nWarping...\n");
-    Sleep(2000);
+    SLEEP(2000);
 
     PullResult result = simulatePull(player); // Use modular function
 
@@ -154,20 +174,25 @@ int warpOnce(Player* player) {
         printf("\nYou got a 3* Light Cone!\n");
     }
 
-    Sleep(1000);
-    return 0;
+    SLEEP(1000);
 }
 
-int warpTen(Player* player) {
+void warpTen(Player* player) {
     int i;
     int hasFourOrFive = 0; // Track if any 4* star or 5* was pulled
 
     printf("\n===================\n");
     printf("Here are your 10-Pull Results:\n");
-    Sleep(2000);
+    SLEEP(2000);
 
     for(i = 0; i < 10; i++) {
         PullResult result = simulatePull(player); // Use modular function
+
+        if (i == 9 && !hasFourOrFive && result == THREE_STAR) {
+            result = FOUR_STAR;
+            player->pullsSince4star = 0;
+            printf("\n(Guarantee triggered) Last pull upgraded to 4* Character/Light Cone\n");
+        }
 
         if (result == FIVE_STAR) {
             printf("\n%02d: 5* Character/Light Cone!\n",i + 1);
@@ -179,16 +204,8 @@ int warpTen(Player* player) {
             printf("\n%02d: 3* Light Cone!\n",i + 1);
         }
 
-        Sleep(1000);
+        SLEEP(1000);
     }
-
-    // Fixed if no 4* or 5* in 10 pulls, guarantee the last one is 4*
-    if (!hasFourOrFive) {
-        printf("\n(Guarantee triggered) Last pull upgraded to 4* Character/Lightcone\n");
-        player->pullsSince4star = 0; // Reset the 4* pity as per guarantee
-    }
-
-    return 0;
 }
 
 // Modular function for simulating one pull
@@ -201,10 +218,6 @@ PullResult simulatePull(Player* player) {
     if (player->pullsSince5star >= SOFT_PITY_START) {
         chanceFive += (player->pullsSince5star - SOFT_PITY_START + 1) * PITY_INCREMENT;
     }
-    if (player->pullsSince5star >= HARD_PITY_5STAR) {
-        chanceFive = 100.0f;
-    }
-
     int roll = rand() % RANDOM_SCALE;
     float rollPercent = roll / 100.0f;
 

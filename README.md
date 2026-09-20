@@ -31,27 +31,6 @@ The simulator is intended for experimentation and entertainment. Its probabiliti
 - A C compiler such as GCC or Clang
 - A terminal or command prompt
 
-## Build and Run
-
-From the project directory, compile the program with:
-
-```bash
-gcc warpSim.c -o warpSim
-```
-
-Run it on macOS or Linux with:
-
-```bash
-./warpSim
-```
-
-On Windows with MinGW, run:
-
-```powershell
-gcc warpSim.c -o warpSim.exe
-.\warpSim.exe
-```
-
 ## Menu
 
 When the program starts, choose from:
