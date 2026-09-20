@@ -11,7 +11,7 @@
 #define SOFT_PITY_START 75
 #define HARD_PITY_5STAR 90
 #define HARD_PITY_4STAR 10
-#define PITY_INCREMENT 0.2f // 0.2% for every suceeding pull after soft pity
+#define PITY_INCREMENT 0.2f // 0.2% for every succeeding pull after soft pity
 #define RANDOM_SCALE 10000
 
 // Struct to encapsulate player state
